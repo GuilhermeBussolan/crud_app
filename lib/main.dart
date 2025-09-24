@@ -216,7 +216,41 @@ class _AddressFormPageState extends State<AddressFormPage> {
             ],
           ),
         ) ??
-        false; // se o usuário fechar o diálogo sem escolher
+        false;
+  }
+
+  /// 🔎 Busca os dados do CEP na API e preenche os campos
+  Future<void> fetchCep() async {
+    final cep = cepController.text.trim();
+    if (cep.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Digite um CEP válido")),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.get(Uri.parse(ApiConfig.cep(cep)));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        setState(() {
+          logradouroController.text = data['logradouro'] ?? "";
+          bairroController.text = data['bairro'] ?? "";
+          cidadeController.text = data['cidade'] ?? "";
+          ufController.text = data['uf'] ?? "";
+          tipoController.text = data['tipo'] ?? "";
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("CEP não encontrado")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Erro ao buscar o CEP")),
+      );
+    }
   }
 
   @override
@@ -248,16 +282,7 @@ class _AddressFormPageState extends State<AddressFormPage> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.search),
-                    // TODO: implementar função fetchCep()
-                    onPressed: () {
-                      // exemplo:
-                      // fetchCep();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Função de buscar CEP não implementada"),
-                        ),
-                      );
-                    },
+                    onPressed: fetchCep,
                   ),
                 ],
               ),
